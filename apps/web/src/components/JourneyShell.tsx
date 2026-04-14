@@ -55,6 +55,30 @@ function formatTimestamp(timestamp: string | null | undefined): string {
   return timestamp ? new Date(timestamp).toLocaleString() : "not yet";
 }
 
+function formatFitLabel(fitState: string | null | undefined): string {
+  switch (fitState) {
+    case "fits":
+      return "Fits now";
+    case "likely_exceeds":
+      return "Close to the limit";
+    case "exceeds":
+      return "Needs more space";
+    default:
+      return "Waiting for inventory";
+  }
+}
+
+function calculateUsagePercent(
+  amount: number | null | undefined,
+  capacity: number | null | undefined
+): number {
+  if (!amount || !capacity || capacity <= 0) {
+    return 0;
+  }
+
+  return Math.max(4, Math.min(100, Math.round((amount / capacity) * 100)));
+}
+
 function calculateFitState(
   netNewBytesEstimate: number,
   availableAnchiseBytes: number | null | undefined
@@ -141,7 +165,9 @@ export function JourneyShell() {
   const [confirmedPlan, setConfirmedPlan] = useState<ImportPlan | null>(null);
   const [materializedBatch, setMaterializedBatch] = useState<MaterializedImportBatch | null>(null);
   const [committedBatch, setCommittedBatch] = useState<CommittedImportBatch | null>(null);
-  const [note, setNote] = useState("Create a workspace first. Inventory stays mandatory before import.");
+  const [note, setNote] = useState(
+    "Start by creating the Anchise vault. Inventory stays mandatory before import."
+  );
 
   const [ownerId, setOwnerId] = useState("emanuele-demo");
   const [storageCapacityGb, setStorageCapacityGb] = useState(200);
@@ -171,6 +197,51 @@ export function JourneyShell() {
     connector.authState === "authenticated" &&
     snapshot === null &&
     ["awaiting_files", "files_detected", "inventory_started"].includes(connector.exportState);
+  const workspaceCapacityBytes =
+    workspace?.storageCapacityBytes ?? storageCapacityGb * 1024 * 1024 * 1024;
+  const visibleSourceBytes =
+    selectionSummary?.sourceBytesEstimate ?? snapshot?.comparison.sourceBytesEstimate ?? null;
+  const visibleNetNewBytes =
+    selectionSummary?.netNewBytesEstimate ?? snapshot?.comparison.netNewBytesEstimate ?? null;
+  const visibleAvailableBytes =
+    selectionSummary?.availableAnchiseBytes ??
+    snapshot?.comparison.availableAnchiseBytes ??
+    workspace?.storageCapacityBytes ??
+    null;
+  const visibleFitState =
+    selectionSummary?.fitState ?? draftPlan?.fitState ?? snapshot?.comparison.fitState ?? "unknown";
+  const vaultUsagePercent = calculateUsagePercent(visibleNetNewBytes, workspaceCapacityBytes);
+  const nextSectionId = !workspace
+    ? "step-space"
+    : !connector
+      ? "step-source"
+      : !snapshot
+        ? "step-footprint"
+        : !confirmedPlan
+          ? "step-plan"
+          : "step-batch";
+  const heroActionLabel = !workspace
+    ? "Start with Anchise space"
+    : !connector
+      ? "Choose the first source"
+      : needsGoogleAuth
+        ? "Complete Google handoff"
+        : waitingForGoogleExportFiles
+          ? "Watch for the archive"
+          : !snapshot
+            ? "Review the footprint"
+            : !confirmedPlan
+              ? "Approve the import plan"
+              : !committedBatch
+                ? "Bring in the first slice"
+                : "Review the next slice";
+
+  function scrollToSection(sectionId: string) {
+    document.getElementById(sectionId)?.scrollIntoView({
+      behavior: "smooth",
+      block: "start"
+    });
+  }
 
   function chooseCategory(category: Category, checked: boolean) {
     setSelectedCategories((current) =>
@@ -334,52 +405,68 @@ export function JourneyShell() {
   return (
     <main className="canvas">
       <section className="hero">
-        <div>
-          <span className="eyebrow">Anchise control plane</span>
-          <h1>Inventory first, then acquisition.</h1>
+        <div className="hero-copy">
+          <span className="eyebrow">Anchise V1</span>
+          <h1>See the shape of a digital life before any import begins.</h1>
           <p>
-            This is now a real Next.js surface mounted on the live control-plane routes. The user
-            sees source size, net-new size, and storage fit in Anchise-controlled cloud space before
-            any import is confirmed.
+            Anchise keeps the experience one-click simple on the surface while staying
+            metadata-first, space-aware, deduplicated, and incremental underneath.
           </p>
+          <div className="hero-actions">
+            <button
+              type="button"
+              className="primary hero-primary"
+              onClick={() => scrollToSection(nextSectionId)}
+            >
+              {heroActionLabel}
+            </button>
+            <p className="hero-caption">
+              Inventory comes first. Full download waits until the user has seen what fits.
+            </p>
+          </div>
         </div>
         <div className="hero-cards">
           <article className="stat-card">
+            <span>Anchise vault</span>
+            <strong>{formatBytes(workspaceCapacityBytes)}</strong>
+          </article>
+          <article className="stat-card">
+            <span>Visible source</span>
+            <strong>{formatBytes(visibleSourceBytes)}</strong>
+          </article>
+          <article className="stat-card">
+            <span>Net-new if approved</span>
+            <strong>{formatBytes(visibleNetNewBytes)}</strong>
+          </article>
+          <article className="stat-card">
             <span>Current fit</span>
-            <strong>{snapshot?.comparison.fitState ?? "not computed"}</strong>
-          </article>
-          <article className="stat-card">
-            <span>Net-new bytes</span>
-            <strong>{formatBytes(snapshot?.comparison.netNewBytesEstimate)}</strong>
-          </article>
-          <article className="stat-card">
-            <span>Plan status</span>
-            <strong>{confirmedPlan?.status ?? draftPlan?.status ?? "not drafted"}</strong>
+            <strong>{formatFitLabel(visibleFitState)}</strong>
           </article>
         </div>
       </section>
 
       <section className="note-strip">
-        <span>System note</span>
+        <span>What happens now</span>
         <p>{note}</p>
       </section>
 
-      <section className="grid">
-        <article className="card">
+      <div className="journey-main">
+        <section className="grid stage-stack">
+          <article id="step-space" className="card">
           <header>
             <span className="badge">01</span>
             <div>
-              <h2>Create Anchise space</h2>
-              <p>Anchor everything in Anchise-controlled cloud storage from step 0.</p>
+              <h2>Create the Anchise vault</h2>
+              <p>Reserve the cloud space first so the user can see what fits before anything lands.</p>
             </div>
           </header>
 
           <label>
-            Owner ID
+            Vault owner label
             <input value={ownerId} onChange={(event) => setOwnerId(event.target.value)} />
           </label>
           <label>
-            Storage tier (GB)
+            Reserved space (GB)
             <input
               type="number"
               min={50}
@@ -414,40 +501,40 @@ export function JourneyShell() {
                 setMaterializedBatch(null);
                 setCommittedBatch(null);
                 setSelectedCategories([]);
-                setNote("Workspace created. Next, register the source lane.");
-              })
+                  setNote("Anchise vault ready. Next, choose the first footprint lane.");
+                })
             }
             disabled={isPending}
           >
-            {workspace ? "Create a fresh workspace" : "Create workspace"}
+            {workspace ? "Create a fresh Anchise vault" : "Create Anchise vault"}
           </button>
 
           {workspace ? (
             <div className="detail">
               <div>
-                <span>Workspace</span>
+                <span>Vault reference</span>
                 <strong>{workspace.workspaceId}</strong>
               </div>
               <div>
-                <span>Capacity</span>
+                <span>Reserved capacity</span>
                 <strong>{formatBytes(workspace.storageCapacityBytes)}</strong>
               </div>
             </div>
           ) : null}
         </article>
 
-        <article className="card">
+        <article id="step-source" className="card">
           <header>
             <span className="badge">02</span>
             <div>
-              <h2>Register source</h2>
-              <p>Choose Google or local hardware before the inventory pass begins.</p>
+              <h2>Choose the first source lane</h2>
+              <p>Make the footprint visible before import by connecting Google or a local folder.</p>
             </div>
           </header>
 
           <div className="split">
             <label>
-              Platform
+              Source type
               <select
                 value={platform}
                 onChange={(event) => setPlatform(event.target.value as Connector["platform"])}
@@ -458,7 +545,7 @@ export function JourneyShell() {
             </label>
 
             <label>
-              Surface
+              Collection surface
               <select
                 value={surface}
                 onChange={(event) => setSurface(event.target.value as Connector["surface"])}
@@ -470,7 +557,7 @@ export function JourneyShell() {
           </div>
 
           <label>
-            Account label
+            Source label
             <input value={accountLabel} onChange={(event) => setAccountLabel(event.target.value)} />
           </label>
 
@@ -493,7 +580,7 @@ export function JourneyShell() {
               </label>
 
               <label>
-                Google export root
+                Google watch folder
                 <input
                   value={googleExportRootPath}
                   onChange={(event) => setGoogleExportRootPath(event.target.value)}
@@ -503,7 +590,7 @@ export function JourneyShell() {
           ) : (
             <div className="split">
               <label>
-                Local source root
+                Local source folder
                 <input
                   value={localRootPath}
                   onChange={(event) => setLocalRootPath(event.target.value)}
@@ -569,15 +656,15 @@ export function JourneyShell() {
                 setMaterializedBatch(null);
                 setCommittedBatch(null);
                 setSelectedCategories([]);
-                setNote(
-                  result.data.platform === "google"
-                    ? "Source registered. Prepare the visible Google sign-in lane, then Anchise will wait for staged export files in the Google export root."
-                    : "Source registered. Inventory can now sketch the digital footprint cheaply."
-                );
-              })
+                  setNote(
+                    result.data.platform === "google"
+                      ? "Source connected. Finish the visible Google handoff and Anchise will wait for the staged archive."
+                      : "Source connected. Anchise can now sketch the digital footprint cheaply."
+                  );
+                })
             }
           >
-            Register source
+            Connect this source
           </button>
 
           {connector ? (
@@ -624,7 +711,7 @@ export function JourneyShell() {
 
               <div className="split">
                 <button
-                  className="secondary"
+                  className={!activeGoogleSession ? "primary" : "secondary"}
                   disabled={!connector || isPending}
                   onClick={() =>
                     runTask(async () => {
@@ -666,7 +753,11 @@ export function JourneyShell() {
                 </button>
 
                 <button
-                  className="primary"
+                  className={
+                    activeGoogleSession && connector?.authState !== "authenticated"
+                      ? "primary"
+                      : "secondary"
+                  }
                   disabled={!connector || !activeGoogleSession || isPending}
                   onClick={() =>
                     runTask(async () => {
@@ -716,7 +807,13 @@ export function JourneyShell() {
                 />
 
                 <button
-                  className="secondary"
+                  className={
+                    connector?.authState === "authenticated" &&
+                    !waitingForGoogleExportFiles &&
+                    !snapshot
+                      ? "primary"
+                      : "secondary"
+                  }
                   disabled={!activeGoogleExportSession?.handoffUrl}
                   onClick={() => {
                     if (!activeGoogleExportSession?.handoffUrl) {
@@ -740,7 +837,7 @@ export function JourneyShell() {
                 </button>
 
                 <button
-                  className="secondary"
+                  className={waitingForGoogleExportFiles ? "primary" : "secondary"}
                   disabled={!connector || isPending}
                   onClick={() =>
                     runTask(async () => {
@@ -952,26 +1049,26 @@ export function JourneyShell() {
           ) : null}
         </article>
 
-        <article className="card wide">
+        <article id="step-footprint" className="card wide">
           <header>
             <span className="badge">03</span>
             <div>
-              <h2>Review digital footprint</h2>
-              <p>Save a lightweight inventory snapshot and expose space pressure before download.</p>
+              <h2>Review the footprint before import</h2>
+              <p>Collect lightweight metadata first so the user can see size, fit, and pressure before download.</p>
             </div>
           </header>
 
           <div className="split">
-            <div className="detail">
-              <div>
-                <span>Inventory lane</span>
-                <strong>{platform === "google" ? googleInventoryProfiles[presetKey].label : "Local filesystem"}</strong>
+              <div className="detail">
+                <div>
+                  <span>Footprint lane</span>
+                  <strong>{platform === "google" ? googleInventoryProfiles[presetKey].label : "Local filesystem"}</strong>
+                </div>
+                <div>
+                  <span>Locked rule</span>
+                  <strong>metadata before download</strong>
+                </div>
               </div>
-              <div>
-                <span>Step 0 rule</span>
-                <strong>metadata first</strong>
-              </div>
-            </div>
 
             <button
               className="primary align-end"
@@ -1005,13 +1102,13 @@ export function JourneyShell() {
                       )
                       .map((entry: InventorySnapshot["categories"][number]) => entry.category)
                   );
-                  setNote(
-                    `Inventory stored. ${result.data.discoveredItemCount} lightweight source items are visible before any download begins.`
-                  );
-                })
+                    setNote(
+                      `Footprint mapped. ${result.data.discoveredItemCount} lightweight source items are now visible before any download begins.`
+                    );
+                  })
               }
             >
-              Run inventory
+              Scan the footprint
             </button>
           </div>
 
@@ -1085,7 +1182,7 @@ export function JourneyShell() {
                 </div>
                 <div>
                   <span>Selected fit</span>
-                  <strong>{selectionSummary?.fitState ?? "unknown"}</strong>
+                  <strong>{formatFitLabel(selectionSummary?.fitState)}</strong>
                 </div>
               </div>
 
@@ -1115,9 +1212,9 @@ export function JourneyShell() {
               {selectionSummary && selectionSummary.fitState === "exceeds" ? (
                 <div className="confirm-box">
                   <span>Space check</span>
-                  <h3>This selected import is larger than the Anchise space available now.</h3>
+                  <h3>This selection is larger than the Anchise vault can hold right now.</h3>
                   <p>
-                    Trim the selected categories or increase workspace space before any binary download starts.
+                    Trim the selected categories or increase reserved space before any binary download starts.
                   </p>
                 </div>
               ) : null}
@@ -1146,12 +1243,12 @@ export function JourneyShell() {
           ) : null}
         </article>
 
-        <article className="card wide">
+        <article id="step-plan" className="card wide">
           <header>
             <span className="badge">04</span>
             <div>
-              <h2>Confirm incremental plan</h2>
-              <p>Draft first, then confirm, so trust-sensitive acquisition starts only after review.</p>
+              <h2>Approve the incremental plan</h2>
+              <p>Draft first, then approve, so Anchise starts acquisition only after the user has seen the shape.</p>
             </div>
           </header>
 
@@ -1177,10 +1274,10 @@ export function JourneyShell() {
           </div>
 
           <div className="split">
-            <button
-              className="primary"
-              disabled={!snapshot || selectedCategories.length === 0 || isPending}
-              onClick={() =>
+              <button
+                className={!draftPlan ? "primary" : "secondary"}
+                disabled={!snapshot || selectedCategories.length === 0 || isPending}
+                onClick={() =>
                 runTask(async () => {
                   if (!workspace || !connector || !snapshot) {
                     setNote("Workspace, connector, and inventory must exist first.");
@@ -1202,17 +1299,19 @@ export function JourneyShell() {
 
                   setDraftPlan(result.data);
                   setConfirmedPlan(null);
-                  setNote("Draft ready. One more confirmation keeps the experience close to one click.");
+                  setNote("Draft ready. One approval now keeps the flow simple while preserving trust.");
                 })
               }
             >
-              Draft plan
+              Draft the plan
             </button>
 
-            <button
-              className="secondary"
-              disabled={!draftPlan || draftPlan.fitState === "exceeds" || isPending}
-              onClick={() =>
+              <button
+                className={
+                  draftPlan && draftPlan.fitState !== "exceeds" ? "primary" : "secondary"
+                }
+                disabled={!draftPlan || draftPlan.fitState === "exceeds" || isPending}
+                onClick={() =>
                 runTask(async () => {
                   if (!draftPlan) {
                     return;
@@ -1230,12 +1329,12 @@ export function JourneyShell() {
                    setConfirmedPlan(result.data);
                    setMaterializedBatch(null);
                    setCommittedBatch(null);
-                   setNote("Confirmed. Anchise can now materialize a first incremental batch without downloading everything.");
-                 })
-               }
-             >
-              Confirm import
-            </button>
+                    setNote("Plan approved. Anchise can now prepare the first incremental slice without downloading everything.");
+                  })
+                }
+              >
+               Approve import
+             </button>
           </div>
 
           {draftPlan ? (
@@ -1250,7 +1349,7 @@ export function JourneyShell() {
               </div>
               <div>
                 <span>Fit state</span>
-                <strong>{draftPlan.fitState}</strong>
+                <strong>{formatFitLabel(draftPlan.fitState)}</strong>
               </div>
               <div>
                 <span>Selected net-new</span>
@@ -1265,7 +1364,7 @@ export function JourneyShell() {
 
           {confirmedPlan ? (
             <div className="confirm-box">
-              <span>Confirmed</span>
+              <span>Approved</span>
               <h3>The incremental plan is ready for execution.</h3>
               <p>
                 Inventory happened first, the storage fit was visible, and duplicate-identical files
@@ -1275,20 +1374,20 @@ export function JourneyShell() {
           ) : null}
         </article>
 
-        <article className="card wide">
+        <article id="step-batch" className="card wide">
           <header>
             <span className="badge">05</span>
             <div>
-              <h2>Materialize incremental batch</h2>
-              <p>Only the next slice is prepared and committed, while duplicate content hashes skip a second binary copy.</p>
+              <h2>Bring in only the next slice</h2>
+              <p>Prepare and commit the next incremental batch while duplicate-identical content stays single-copy.</p>
             </div>
           </header>
 
           <div className="split">
-            <button
-              className="primary"
-              disabled={!confirmedPlan || isPending}
-              onClick={() =>
+              <button
+                className={!materializedBatch ? "primary" : "secondary"}
+                disabled={!confirmedPlan || isPending}
+                onClick={() =>
                 runTask(async () => {
                   if (!confirmedPlan) {
                     setNote("Confirm the plan before materializing a batch.");
@@ -1308,18 +1407,18 @@ export function JourneyShell() {
                   setMaterializedBatch(result.data);
                   setCommittedBatch(null);
                   setNote(
-                    `Batch ${result.data.batch.ordinal} is ready with ${result.data.sourceItems.length} deferred source items.`
+                    `Slice ${result.data.batch.ordinal} is ready with ${result.data.sourceItems.length} deferred source items.`
                   );
                 })
               }
             >
-              Materialize next batch
+              Prepare next slice
             </button>
 
-            <button
-              className="secondary"
-              disabled={!materializedBatch || isPending}
-              onClick={() =>
+              <button
+                className={materializedBatch ? "primary" : "secondary"}
+                disabled={!materializedBatch || isPending}
+                onClick={() =>
                 runTask(async () => {
                   if (!materializedBatch) {
                     return;
@@ -1347,12 +1446,12 @@ export function JourneyShell() {
 
                   setCommittedBatch(result.data);
                   setNote(
-                    `Batch committed. ${result.data.storedObjectCount} new objects landed, ${result.data.dedupObjectCount} duplicates were skipped.`
+                    `Slice committed. ${result.data.storedObjectCount} new objects landed and ${result.data.dedupObjectCount} duplicate matches were skipped.`
                   );
                 })
               }
             >
-              Commit batch
+              Commit slice
             </button>
           </div>
 
@@ -1384,7 +1483,106 @@ export function JourneyShell() {
             </div>
           ) : null}
         </article>
-      </section>
+        </section>
+
+        <aside className="rail">
+          <article className="rail-card">
+            <span className="rail-label">Anchise vault</span>
+            <h3>{workspace ? "Cloud space is reserved" : "Reserve the vault first"}</h3>
+            <p>
+              The user sees available space before Anchise starts any real acquisition, and identical
+              files stay single-copy by content hash.
+            </p>
+            <div className="vault-meter" aria-hidden="true">
+              <span style={{ width: `${vaultUsagePercent}%` }} />
+            </div>
+            <div className="rail-stats">
+              <div>
+                <span>Reserved</span>
+                <strong>{formatBytes(workspaceCapacityBytes)}</strong>
+              </div>
+              <div>
+                <span>Visible net-new</span>
+                <strong>{formatBytes(visibleNetNewBytes)}</strong>
+              </div>
+              <div>
+                <span>Available now</span>
+                <strong>{formatBytes(visibleAvailableBytes)}</strong>
+              </div>
+              <div>
+                <span>Fit state</span>
+                <strong>{formatFitLabel(visibleFitState)}</strong>
+              </div>
+            </div>
+          </article>
+
+          <article className="rail-card">
+            <span className="rail-label">Journey</span>
+            <div className="rail-steps">
+              {[
+                {
+                  id: "step-space",
+                  number: "01",
+                  title: "Create vault",
+                  state: workspace ? "ready" : "next"
+                },
+                {
+                  id: "step-source",
+                  number: "02",
+                  title: "Connect source",
+                  state: connector ? "ready" : workspace ? "next" : "locked"
+                },
+                {
+                  id: "step-footprint",
+                  number: "03",
+                  title: "Review footprint",
+                  state: snapshot ? "ready" : connector ? "next" : "locked"
+                },
+                {
+                  id: "step-plan",
+                  number: "04",
+                  title: "Approve plan",
+                  state: confirmedPlan ? "ready" : snapshot ? "next" : "locked"
+                },
+                {
+                  id: "step-batch",
+                  number: "05",
+                  title: "Commit slice",
+                  state: committedBatch ? "ready" : confirmedPlan ? "next" : "locked"
+                }
+              ].map((step) => (
+                <button
+                  key={step.id}
+                  type="button"
+                  className={`rail-step rail-step-${step.state}`}
+                  onClick={() => scrollToSection(step.id)}
+                >
+                  <span>{step.number}</span>
+                  <strong>{step.title}</strong>
+                </button>
+              ))}
+            </div>
+          </article>
+
+          <article className="rail-card">
+            <span className="rail-label">Locked principles</span>
+            <div className="policy-list">
+              <div className="policy-item">
+                <strong>Inventory first</strong>
+                <p>The user sees metadata and fit before download begins.</p>
+              </div>
+              <div className="policy-item">
+                <strong>Incremental by default</strong>
+                <p>Anchise prepares only the next slice instead of pulling everything at once.</p>
+              </div>
+              <div className="policy-item">
+                <strong>Single-copy storage</strong>
+                <p>Duplicate-identical binaries keep provenance without a second stored file.</p>
+              </div>
+            </div>
+          </article>
+        </aside>
+      </div>
     </main>
   );
 }

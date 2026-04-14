@@ -4,8 +4,9 @@ import type { ReactNode } from "react";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Anchise Control Plane",
-  description: "Inventory-first control plane for a user's digital footprint."
+  title: "Anchise | Inventory-First Digital Footprint",
+  description:
+    "Anchise lets a user see the shape of their digital footprint before any import begins."
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
