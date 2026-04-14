@@ -1,0 +1,27 @@
+{
+  "name": "anchise",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "npm@11.11.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "db:ping": "node --env-file=.env.local ./scripts/db-ping.mjs",
+    "db:smoke:control-plane": "node --env-file=.env.local ./scripts/control-plane-smoke.mjs",
+    "api:smoke:control-plane": "npm run typecheck && node --env-file=.env.local ./scripts/control-plane-api-smoke.mjs",
+    "web:route:smoke": "npm run typecheck && node --env-file=.env.local ./scripts/web-route-smoke.mjs",
+    "dev:web": "npm run dev -w @anchise/web",
+    "build:web": "npm run build -w @anchise/web",
+    "typecheck": "tsc --build",
+    "clean": "node -e \"console.log('clean not yet implemented')\""
+  },
+  "dependencies": {
+    "postgres": "^3.4.7"
+  },
+  "devDependencies": {
+    "@types/node": "^24.5.2",
+    "typescript": "^5.8.3"
+  }
+}

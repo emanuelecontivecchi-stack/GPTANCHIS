@@ -1,0 +1,14 @@
+node_modules/
+dist/
+build/
+.next/
+.next-app/
+out/
+coverage/
+*.log
+*.tsbuildinfo
+.env
+.env.*
+.vercel/
+.DS_Store
+Thumbs.db
