@@ -2,7 +2,6 @@
   "name": "@anchise/web",
   "version": "0.1.0",
   "private": true,
-  "type": "module",
   "main": "dist/customerJourney.js",
   "types": "dist/customerJourney.d.ts",
   "scripts": {
