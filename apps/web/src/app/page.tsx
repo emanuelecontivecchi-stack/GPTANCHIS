@@ -1,5 +1,5 @@
-import { JourneyShell } from "../components/JourneyShell.js";
+import { PortalWorkbench } from "../components/PortalWorkbench.js";
 
 export default function HomePage() {
-  return <JourneyShell />;
+  return <PortalWorkbench />;
 }

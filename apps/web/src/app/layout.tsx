@@ -4,9 +4,9 @@ import type { ReactNode } from "react";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Anchise | Inventory-First Digital Footprint",
+  title: "Anchise | Partner and Heir Prototypes",
   description:
-    "Anchise lets a user see the shape of their digital footprint before any import begins."
+    "Henri de Borniol partner and heir wireframes for memorial dossiers, staged uploads, Service 2 controls, Service 1 extras, and Anchise activation."
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

@@ -235,6 +235,91 @@ export function JourneyShell() {
               : !committedBatch
                 ? "Bring in the first slice"
                 : "Review the next slice";
+  const portalDashboardMetrics = [
+    {
+      label: "Monthly billing",
+      value: "$42.8K",
+      detail: "12 invoices pending review"
+    },
+    {
+      label: "Open memorial dossiers",
+      value: "184",
+      detail: "37 need Borniol action"
+    },
+    {
+      label: "Identity match queue",
+      value: "29",
+      detail: "9 awaiting photo confirmation"
+    },
+    {
+      label: "Heir invitations",
+      value: "16",
+      detail: "ready once matching clears"
+    }
+  ] as const;
+  const portalCaseRows = [
+    {
+      caseId: "CASE-10482",
+      service: "Service 2 memorial package",
+      deceased: "Jean Dupont",
+      heir: "Sophie Martin",
+      status: "Awaiting photo match",
+      updated: "2h ago",
+      tone: "warning"
+    },
+    {
+      caseId: "CASE-10467",
+      service: "Archive retrieval",
+      deceased: "Marguerite Rossi",
+      heir: "Luca Rossi",
+      status: "Invite ready",
+      updated: "Today",
+      tone: "ready"
+    },
+    {
+      caseId: "CASE-10431",
+      service: "Memorial intake",
+      deceased: "Antoine Bernard",
+      heir: "Claire Bernard",
+      status: "Certificate missing",
+      updated: "Yesterday",
+      tone: "hold"
+    }
+  ] as const;
+  const portalRetrievalItems = [
+    "Retrieve passport, death certificate, and prior memorial instructions from one records rail.",
+    "Search by dossier number, deceased identity, heir email, or invoice reference.",
+    "Keep the image-match state visible beside each dossier instead of hiding it in a second screen."
+  ] as const;
+  const portalDeceasedFields = [
+    "Passport of deceased",
+    "Death certificate",
+    "Full legal name",
+    "Date of birth",
+    "Place of birth",
+    "Date of death",
+    "Place of death",
+    "Lead heir email"
+  ] as const;
+  const portalHeirFields = [
+    "Passport of heir",
+    "Full legal name",
+    "Date of birth",
+    "Place of birth",
+    "Email address",
+    "Relation to deceased",
+    "Authority or proof to act, as applicable"
+  ] as const;
+  const portalServiceTwoChecklist = [
+    "Sophie can upload 5 to 10 pictures from home for Service 2.",
+    "Those pictures stay in review until Borniol or Anchise confirms they match the deceased documentation.",
+    "No Anchise space is issued to Sophie before the picture-to-document match is confirmed."
+  ] as const;
+  const portalOnboardingSteps = [
+    "After match confirmation, send an invitation to Sophie using the email that will become her Anchise account.",
+    "Preferred V1: skip a second email verification because the invitation email is initiated by Borniol.",
+    "Sophie sets her password and can enter Anchise immediately once the invitation is accepted."
+  ] as const;
 
   function scrollToSection(sectionId: string) {
     document.getElementById(sectionId)?.scrollIntoView({
@@ -448,6 +533,256 @@ export function JourneyShell() {
       <section className="note-strip">
         <span>What happens now</span>
         <p>{note}</p>
+      </section>
+
+      <section className="wireframe-board" aria-labelledby="wireframe-title">
+        <div className="wireframe-header">
+          <div>
+            <span className="eyebrow wireframe-eyebrow">Wireframe first</span>
+            <h2 id="wireframe-title">Partner portal wireframes</h2>
+            <p>
+              Three screens define the first pass: partner log in, dashboard operations,
+              and the ordering plus retrieval workspace for a case.
+            </p>
+          </div>
+          <article className="wireframe-principles">
+            <span>Portal scope</span>
+            <strong>Ceremonial, restrained, protocol-led partner operations.</strong>
+            <p>
+              The wireframe pass stays structural, but the visual tone should feel like a
+              formal Paris maison: deceased-and-heir dossiers, dark lacquer, parchment,
+              brass, and orderly records.
+            </p>
+          </article>
+        </div>
+
+        <div className="portal-screens" aria-label="Partner portal wireframes">
+          <article className="portal-screen">
+            <div className="portal-screen-label">
+              <span>Wireframe 1</span>
+              <strong>Partner portal log in</strong>
+            </div>
+            <div className="portal-login-shell">
+              <div className="portal-login-mark">
+                <span>Maison Anchise partner office</span>
+                <h3>Reserved access to memorial dossiers, heirs, and retrieval records.</h3>
+                <p>
+                  Keep the threshold quiet and formal: identity, partner context, and a
+                  direct handoff into the operational registry.
+                </p>
+                <div className="portal-chip-row">
+                  <span className="portal-chip">Email</span>
+                  <span className="portal-chip">Secret</span>
+                  <span className="portal-chip">Partner code</span>
+                </div>
+              </div>
+              <div className="portal-login-panel">
+                <div className="portal-field">
+                  <span>Partner email</span>
+                  <strong>name@partner.org</strong>
+                </div>
+                <div className="portal-field">
+                  <span>Password</span>
+                  <strong>************</strong>
+                </div>
+                <div className="portal-field">
+                  <span>Partner code</span>
+                  <strong>ANCH-PRO-014</strong>
+                </div>
+                <div className="portal-button-row">
+                  <button type="button" className="primary">
+                    Log in
+                  </button>
+                  <button type="button" className="secondary">
+                    Need help?
+                  </button>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <article className="portal-screen">
+            <div className="portal-screen-label">
+              <span>Wireframe 2</span>
+              <strong>Partner portal dashboard</strong>
+            </div>
+            <div className="portal-dashboard-shell">
+              <div className="portal-toolbar">
+                <div className="portal-search">
+                  <span>Search dossier, deceased, heir, invoice, or document</span>
+                  <strong>Dossier 10482 / Jean Dupont / Sophie Martin / death certificate</strong>
+                </div>
+                <div className="portal-toolbar-actions">
+                  <button type="button" className="secondary">
+                    Search dossier
+                  </button>
+                  <button type="button" className="primary">
+                    Add new dossier
+                  </button>
+                  <button type="button" className="secondary">
+                    Document retrieval
+                  </button>
+                </div>
+              </div>
+
+              <div className="portal-metrics-grid">
+                {portalDashboardMetrics.map((metric) => (
+                  <article key={metric.label} className="portal-metric">
+                    <span>{metric.label}</span>
+                    <strong>{metric.value}</strong>
+                    <p>{metric.detail}</p>
+                  </article>
+                ))}
+              </div>
+
+              <div className="portal-dashboard-grid">
+                <div className="portal-case-table">
+                  <div className="portal-table-head">
+                    <span>Overall memorial dossiers</span>
+                    <strong>Consult the active register of deceased and heirs</strong>
+                  </div>
+                  {portalCaseRows.map((row) => (
+                    <div key={row.caseId} className="portal-table-row">
+                      <div>
+                        <span>{row.caseId}</span>
+                        <strong>{row.service}</strong>
+                      </div>
+                      <div>
+                        <span>Deceased</span>
+                        <strong>{row.deceased}</strong>
+                      </div>
+                      <div>
+                        <span>Lead heir</span>
+                        <strong>{row.heir}</strong>
+                      </div>
+                      <div>
+                        <span>Status / last action</span>
+                        <strong className={`portal-status portal-status-${row.tone}`}>{row.status}</strong>
+                        <em className="portal-substatus">{row.updated}</em>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="portal-side-stack">
+                  <article className="portal-side-card">
+                    <span>Billing ledger</span>
+                    <strong>Invoices, approvals, and family-facing holds</strong>
+                    <p>
+                      Show billing health directly on the dashboard so partners do not need
+                      to leave the operational view.
+                    </p>
+                  </article>
+                  <article className="portal-side-card">
+                    <span>Document retrieval</span>
+                    <strong>Records office rail</strong>
+                    <ul className="portal-list">
+                      {portalRetrievalItems.map((item) => (
+                        <li key={item}>{item}</li>
+                      ))}
+                    </ul>
+                  </article>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <article className="portal-screen">
+            <div className="portal-screen-label">
+              <span>Wireframe 3</span>
+              <strong>New case / case retrieval ordering</strong>
+            </div>
+            <div className="portal-order-shell">
+              <div className="portal-order-grid">
+                <article className="portal-order-card">
+                  <span>New memorial dossier</span>
+                  <strong>Ingest deceased and heir identity records</strong>
+                  <div className="portal-order-fields">
+                    <div className="portal-field">
+                      <span>Service requested</span>
+                      <strong>Service 2 memorial activation</strong>
+                    </div>
+                    <div className="portal-field">
+                      <span>Dossier reference</span>
+                      <strong>NC-24-01882</strong>
+                    </div>
+                    <div className="portal-field">
+                      <span>Lead heir</span>
+                      <strong>Sophie Martin / sophie@email.com</strong>
+                    </div>
+                    <div className="portal-field">
+                      <span>Identity gate</span>
+                      <strong>Match required before Anchise access</strong>
+                    </div>
+                  </div>
+                  <div className="portal-intake-grid">
+                    <div className="portal-intake-card">
+                      <span>Deceased record</span>
+                      <strong>Mandatory memorial identity packet</strong>
+                      <ul className="portal-list portal-list-tight">
+                        {portalDeceasedFields.map((item) => (
+                          <li key={item}>{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div className="portal-intake-card">
+                      <span>Heir record</span>
+                      <strong>Capture the same identity fields where applicable</strong>
+                      <ul className="portal-list portal-list-tight">
+                        {portalHeirFields.map((item) => (
+                          <li key={item}>{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                </article>
+
+                <article className="portal-order-card">
+                  <span>Service 2 evidence package</span>
+                  <strong>Collect the home-upload picture set</strong>
+                  <ul className="portal-list">
+                    {portalServiceTwoChecklist.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                  <div className="portal-button-row">
+                    <button type="button" className="primary">
+                      Open intake
+                    </button>
+                    <button type="button" className="secondary">
+                      Request pictures
+                    </button>
+                  </div>
+                </article>
+              </div>
+
+              <div className="portal-order-summary">
+                <article className="portal-side-card">
+                  <span>Identity confirmation gate</span>
+                  <strong>Release Anchise only after match</strong>
+                  <p>
+                    Borniol can approve the match manually, or Anchise can assist through
+                    biometric comparison between the picture set and the deceased documents.
+                  </p>
+                </article>
+                <article className="portal-side-card">
+                  <span>Sophie onboarding</span>
+                  <strong>Invite, password, and Anchise entry</strong>
+                  <ul className="portal-list">
+                    {portalOnboardingSteps.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                </article>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section className="prototype-heading" aria-label="Functional prototype">
+        <span>Existing prototype</span>
+        <p>The controls below remain the current hookup surface while the partner portal wireframes take shape above.</p>
       </section>
 
       <div className="journey-main">
