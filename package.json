@@ -14,6 +14,12 @@
     "web:route:smoke": "npm run typecheck && node --env-file=.env.local ./scripts/web-route-smoke.mjs",
     "dev:web": "npm run dev -w @anchise/web",
     "build:web": "npm run build -w @anchise/web",
+    "dev:partner-web": "npm run dev -w @anchise/partner-web",
+    "build:partner-web": "npm run build -w @anchise/partner-web",
+    "start:partner-web": "npm run start -w @anchise/partner-web",
+    "dev:heir-web": "npm run dev -w @anchise/heir-web",
+    "build:heir-web": "npm run build -w @anchise/heir-web",
+    "start:heir-web": "npm run start -w @anchise/heir-web",
     "typecheck": "tsc --build",
     "clean": "node -e \"console.log('clean not yet implemented')\""
   },
